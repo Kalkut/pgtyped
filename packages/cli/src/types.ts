@@ -18,6 +18,10 @@ const Json: Type = {
   definition:
     'null | boolean | number | string | Json[] | { [key: string]: Json }',
 };
+const getArray = (baseType: Type): Type => ({
+  name: `${baseType.name}Array`,
+  definition: `(${baseType.definition ?? baseType.name})[]`,
+});
 
 export const DefaultTypeMapping = Object.freeze({
   // Integer types
@@ -97,7 +101,7 @@ function declareAlias(name: string, definition: string): string {
 }
 
 function declareStringUnion(name: string, values: string[]) {
-  return declareAlias(name, values.map(v => `'${v}'`).join(' | '));
+  return declareAlias(name, values.map((v) => `'${v}'`).join(' | '));
 }
 
 function declareEnum(name: string, values: string[]) {
@@ -118,8 +122,7 @@ export class TypeAllocator {
   constructor(
     private mapping: TypeMapping,
     private allowUnmappedTypes?: boolean,
-  ) {
-  }
+  ) {}
 
   isMappedType(name: string): name is keyof TypeMapping {
     return name in this.mapping;
@@ -127,21 +130,34 @@ export class TypeAllocator {
 
   /** Lookup a database-provided type name in the allocator's map */
   use(typeNameOrType: MappableType): string {
-    let typ: Type;
+    let typ: Type | null = null;
 
     if (typeof typeNameOrType == 'string') {
-      if (!this.isMappedType(typeNameOrType)) {
-        if (this.allowUnmappedTypes) {
-          return typeNameOrType;
+      if (typeNameOrType[0] === '_') {
+        // If starts with _ it is an PG Array type
+
+        const arrayValueType = typeNameOrType.slice(1);
+        // ^ Converts _varchar -> varchar, then wraps the type in an array
+        // type wrapper
+        if (this.isMappedType(arrayValueType)) {
+          typ = getArray(this.mapping[arrayValueType]);
         }
-        this.errors.push(
-          new Error(
-            `Postgres type '${typeNameOrType}' is not supported by mapping`,
-          ),
-        );
-        return 'never';
       }
-      typ = this.mapping[typeNameOrType];
+
+      if (typ == null) {
+        if (!this.isMappedType(typeNameOrType)) {
+          if (this.allowUnmappedTypes) {
+            return typeNameOrType;
+          }
+          this.errors.push(
+            new Error(
+              `Postgres type '${typeNameOrType}' is not supported by mapping`,
+            ),
+          );
+          return 'never';
+        }
+        typ = this.mapping[typeNameOrType];
+      }
     } else {
       typ = typeNameOrType;
     }
