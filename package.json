@@ -32,7 +32,7 @@
   "dependencies": {
     "io-ts": "^2.1.2",
     "@pgtyped/cli": "Kalkut/pgtyped#array-support&workspace=@pgtyped/cli",
-    "@pgtyped/query": "Kalkut/pgtyped#array-support&workspace=@pgtyped/query",
+    "@pgtyped/query": "Kalkut/pgtyped#array-support&workspace=@pgtyped/query"
   },
   "jest": {
     "testRegex": "(/tests/.*|(\\.|/)test)\\.tsx?$",
