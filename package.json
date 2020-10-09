@@ -4,6 +4,10 @@
   "main": "index.js",
   "author": "Adel Salakh",
   "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "lerna run build",
     "watch": "lerna run --parallel watch",
